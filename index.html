@@ -1,0 +1,556 @@
+<style>
+.efs-wrap{background:#1a1a1a;border-radius:12px;padding:0;overflow:hidden;display:flex;font-family:var(--font-sans);color:#eee;height:600px;}
+.efs-canvas-wrap{flex:1;position:relative;background:#fff;}
+.efs-canvas-wrap canvas{display:block;width:100%;height:100%;cursor:crosshair;}
+.efs-side{width:240px;background:#0d0d0d;border-left:1px solid #333;padding:14px;overflow-y:auto;font-size:12px;}
+.efs-side h3{font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#F7931D;margin:0 0 8px;font-weight:500;}
+.efs-side h3:not(:first-child){margin-top:18px;}
+.efs-btn{display:block;width:100%;padding:7px 10px;background:#222;color:#eee;border:1px solid #444;border-radius:4px;cursor:pointer;font-size:11px;font-family:inherit;margin-bottom:6px;text-align:left;}
+.efs-btn:hover{background:#2a2a2a;border-color:#666;}
+.efs-btn.act{background:rgba(247,147,29,0.18);border-color:#F7931D;color:#F7931D;}
+.efs-btn.danger{color:#e88;border-color:#622;}
+.efs-btn.danger:hover{background:#311;}
+.efs-btn.success{color:#7c7;border-color:#264;}
+.efs-btn.success:hover{background:#132;}
+.efs-btn.preset{color:#9af;border-color:#246;}
+.efs-btn.preset:hover{background:#123;}
+.efs-btn.mode{color:#F7931D;border-color:#F7931D;background:#222;}
+.efs-btn.mode:hover{background:#2a2017;}
+.efs-btn.mode.act{background:rgba(247,147,29,0.18);}
+.efs-row{display:flex;gap:6px;margin-bottom:6px;}
+.efs-row .efs-btn{margin-bottom:0;}
+.efs-frames{margin-bottom:8px;}
+.efs-frame-item{display:flex;align-items:center;gap:6px;padding:5px 8px;background:#1a1a1a;border:1px solid #333;border-radius:4px;margin-bottom:4px;cursor:pointer;font-size:11px;}
+.efs-frame-item.sel{border-color:#F7931D;background:rgba(247,147,29,0.1);}
+.efs-frame-item .num{color:#888;font-family:var(--font-mono);}
+.efs-frame-item.sel .num{color:#F7931D;}
+.efs-frame-item .x{margin-left:auto;color:#666;cursor:pointer;padding:0 4px;}
+.efs-frame-item .x:hover{color:#e88;}
+.efs-info{font-size:10px;color:#888;line-height:1.5;margin-top:8px;padding:8px;background:#1a1a1a;border-radius:4px;}
+.efs-tools{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:8px;}
+.efs-tools .efs-btn{margin-bottom:0;text-align:center;font-size:10px;padding:6px 4px;}
+.efs-out{font-family:var(--font-mono);font-size:9px;background:#000;color:#5a5;padding:6px;border-radius:4px;border:1px solid #222;max-height:80px;overflow:auto;white-space:pre;}
+.efs-stat{font-size:10px;color:#888;display:flex;justify-content:space-between;padding:3px 0;}
+.efs-stat span{color:#ccc;font-family:var(--font-mono);}
+input[type="range"]{width:100%;}
+.efs-pal{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:6px;}
+.efs-sw{width:100%;aspect-ratio:1;border:2px solid #333;border-radius:4px;cursor:pointer;padding:0;}
+.efs-sw.sel{border-color:#fff;box-shadow:0 0 0 1px #F7931D;}
+.efs-hex{display:flex;gap:4px;align-items:center;margin-bottom:6px;}
+.efs-hex input{flex:1;background:#000;color:#eee;border:1px solid #333;border-radius:4px;padding:5px 8px;font-family:var(--font-mono);font-size:11px;text-transform:uppercase;}
+.efs-hex .preview{width:24px;height:24px;border-radius:4px;border:1px solid #333;}
+.efs-toggle{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#1a1a1a;border:1px solid #333;border-radius:4px;margin-bottom:8px;cursor:pointer;font-size:11px;user-select:none;}
+.efs-toggle.on{border-color:#F7931D;color:#F7931D;background:rgba(247,147,29,0.1);}
+.efs-toggle .knob{width:30px;height:16px;background:#444;border-radius:8px;position:relative;flex-shrink:0;transition:background .15s;}
+.efs-toggle.on .knob{background:#F7931D;}
+.efs-toggle .knob::after{content:'';position:absolute;top:2px;left:2px;width:12px;height:12px;background:#fff;border-radius:50%;transition:left .15s;}
+.efs-toggle.on .knob::after{left:16px;}
+</style>
+<div class="efs-wrap">
+  <div class="efs-canvas-wrap">
+    <canvas id="efs-c"></canvas>
+  </div>
+  <div class="efs-side">
+    <h3>Mode</h3>
+    <div class="efs-tools">
+      <button class="efs-btn mode act" id="efs-m-draw">✎ Dessiner</button>
+      <button class="efs-btn mode" id="efs-m-frame">▭ Cadres</button>
+    </div>
+    <div id="efs-draw-tools">
+      <div class="efs-toggle on" id="efs-fa">
+        <span>Cadres actifs (réplication)</span>
+        <span class="knob"></span>
+      </div>
+      <h3>Couleur</h3>
+      <div class="efs-pal" id="efs-pal"></div>
+      <div class="efs-hex">
+        <input type="text" id="efs-hex" maxlength="7" value="#F7931D">
+        <div class="preview" id="efs-prev" style="background:#F7931D;"></div>
+      </div>
+      <h3>Épaisseur</h3>
+      <div class="efs-stat"><span>Trait</span><span id="efs-th-out">2.0 px</span></div>
+      <input type="range" id="efs-th" min="2" max="200" value="20" step="1">
+      <div class="efs-row" style="margin-top:8px;">
+        <button class="efs-btn" id="efs-undo">↶ Annuler trait</button>
+      </div>
+      <button class="efs-btn danger" id="efs-clear-all">Tout effacer (dessins)</button>
+      <div class="efs-info" id="efs-info-draw">Trace les traits qui formeront la base de l'arbre. Maintiens le clic pour dessiner.</div>
+    </div>
+    <div id="efs-frame-tools" style="display:none;">
+      <div class="efs-row">
+        <button class="efs-btn" id="efs-add">+ Cadre</button>
+        <button class="efs-btn" id="efs-dup">Dupliquer</button>
+      </div>
+      <button class="efs-btn preset" id="efs-preset1">⚡ Charger preset arbre 1</button>
+      <button class="efs-btn preset" id="efs-preset2">⚡ Charger preset arbre 2</button>
+      <button class="efs-btn danger" id="efs-clear-frames">Supprimer tous les cadres</button>
+      <h3>Cadres</h3>
+      <div class="efs-frames" id="efs-list"></div>
+      <div id="efs-frame-edit" style="display:none;">
+        <h3>Cadre sélectionné</h3>
+        <div class="efs-stat"><span>Position</span><span id="efs-pos">—</span></div>
+        <div class="efs-stat"><span>Échelle</span><span id="efs-scl">—</span></div>
+        <div class="efs-stat"><span>Rotation</span><span id="efs-rot">—</span></div>
+        <button class="efs-btn danger" id="efs-del" style="margin-top:8px;">Supprimer ce cadre</button>
+      </div>
+      <div class="efs-info">
+        <b>Glisse</b> au centre = déplacer<br>
+        <b>Coins</b> = redimensionner<br>
+        <b>Cercle haut</b> = rotation<br>
+        Le cadre sélectionné passe au premier plan.
+      </div>
+    </div>
+    <h3>Récursion</h3>
+    <div class="efs-stat"><span>Itérations</span><span id="efs-it-out">5</span></div>
+    <input type="range" id="efs-it" min="1" max="9" value="5" step="1">
+    <h3 style="margin-top:14px;">Sauvegarder & exporter</h3>
+    <button class="efs-btn success" id="efs-save">⤓ Sauvegarder PNG</button>
+    <button class="efs-btn success" id="efs-save-hd">⤓ Sauvegarder PNG HD (×3)</button>
+    <button class="efs-btn" id="efs-exp">Copier paramètres (JSON)</button>
+    <div class="efs-out" id="efs-out-box" style="display:none;"></div>
+  </div>
+</div>
+<script>
+(function(){
+  var cv=document.getElementById('efs-c'),ctx=cv.getContext('2d');
+  var wrap=cv.parentElement;
+  var W,H;
+  function resize(){
+    W=wrap.clientWidth;H=wrap.clientHeight;
+    cv.width=W;cv.height=H;
+    render();
+  }
+  var strokes=[];
+  var frames=[];
+  var mode='draw';
+  var iterations=5;
+  var selFrame=-1;
+  var dragState=null;
+  var curColor='#F7931D';
+  var curWidth=2.0;
+  var framesActive=true;
+
+  // Both presets default to 6 iterations on load.
+  var PRESET1={
+    canvas:{w:496,h:600},
+    iterations:6,
+    frames:[
+      {cx:169,cy:314,w:280,h:206,rot:-0.893},
+      {cx:328,cy:312,w:280,h:206,rot:1.118},
+      {cx:275,cy:204,w:318,h:377,rot:0.013}
+    ]
+  };
+  var PRESET2={
+    canvas:{w:1076,h:600},
+    iterations:6,
+    frames:[
+      {cx:387,cy:334,w:446,h:273,rot:-0.919},
+      {cx:712,cy:352,w:446,h:273,rot:1.106},
+      {cx:575,cy:200,w:640,h:426,rot:0.096}
+    ]
+  };
+
+  var palette=[
+    '#F7931D','#FFFFFF','#000000','#FFB450',
+    '#5C3A1E','#3A6B2E','#1a1a1a','#888888',
+    '#E8501A','#FFD400','#1E6FE0','#D81F1F'
+  ];
+  function buildPalette(){
+    var p=document.getElementById('efs-pal');
+    p.innerHTML='';
+    palette.forEach(function(c){
+      var b=document.createElement('button');
+      b.className='efs-sw'+(c.toUpperCase()===curColor.toUpperCase()?' sel':'');
+      b.style.background=c;
+      b.title=c;
+      b.onclick=function(){setColor(c);};
+      p.appendChild(b);
+    });
+  }
+  function setColor(c){
+    curColor=c.toUpperCase();
+    document.getElementById('efs-hex').value=curColor;
+    document.getElementById('efs-prev').style.background=curColor;
+    buildPalette();
+  }
+  document.getElementById('efs-hex').addEventListener('input',function(e){
+    var v=e.target.value.trim();
+    if(!v.startsWith('#'))v='#'+v;
+    if(/^#[0-9A-Fa-f]{6}$/.test(v)){
+      curColor=v.toUpperCase();
+      document.getElementById('efs-prev').style.background=curColor;
+      buildPalette();
+    }
+  });
+  document.getElementById('efs-th').addEventListener('input',function(e){
+    curWidth=(+e.target.value)/10;
+    document.getElementById('efs-th-out').textContent=curWidth.toFixed(1)+' px';
+  });
+
+  var faEl=document.getElementById('efs-fa');
+  function updateFAUI(){
+    faEl.classList.toggle('on',framesActive);
+    var info=document.getElementById('efs-info-draw');
+    if(framesActive){
+      info.innerHTML='Trace les traits qui formeront la base de l\'arbre. Ils seront <b>répliqués par chaque cadre</b>.';
+    } else {
+      info.innerHTML='<b>Mode retouche locale</b> : les nouveaux traits restent où tu les dessines, ils ne sont <b>pas répliqués</b> par les cadres.';
+    }
+  }
+  faEl.onclick=function(){
+    framesActive=!framesActive;
+    updateFAUI();
+  };
+
+  function setMode(m){
+    mode=m;
+    document.getElementById('efs-m-draw').classList.toggle('act',m==='draw');
+    document.getElementById('efs-m-frame').classList.toggle('act',m==='frame');
+    document.getElementById('efs-draw-tools').style.display=m==='draw'?'block':'none';
+    document.getElementById('efs-frame-tools').style.display=m==='frame'?'block':'none';
+    cv.style.cursor=m==='draw'?'crosshair':'default';
+    render();
+  }
+  document.getElementById('efs-m-draw').onclick=function(){setMode('draw');};
+  document.getElementById('efs-m-frame').onclick=function(){setMode('frame');};
+
+  document.getElementById('efs-undo').onclick=function(){
+    if(strokes.length>0){strokes.pop();render();}
+  };
+  document.getElementById('efs-clear-all').onclick=function(){strokes=[];render();};
+  document.getElementById('efs-clear-frames').onclick=function(){
+    frames.length=0;
+    selFrame=-1;
+    rebuildList();updateFrameUI();render();
+  };
+  document.getElementById('efs-it').oninput=function(e){
+    iterations=+e.target.value;
+    document.getElementById('efs-it-out').textContent=iterations;
+    render();
+  };
+
+  function loadPreset(P){
+    frames.length=0;
+    selFrame=-1;
+    var Wfactor=W/P.canvas.w;
+    var Hfactor=H/P.canvas.h;
+    P.frames.forEach(function(pf){
+      frames.push({
+        cx:pf.cx*Wfactor,
+        cy:pf.cy*Hfactor,
+        w:pf.w*Wfactor,
+        h:pf.h*Hfactor,
+        rot:pf.rot
+      });
+    });
+    iterations=P.iterations;
+    document.getElementById('efs-it').value=iterations;
+    document.getElementById('efs-it-out').textContent=iterations;
+    rebuildList();updateFrameUI();render();
+  }
+  document.getElementById('efs-preset1').onclick=function(){loadPreset(PRESET1);};
+  document.getElementById('efs-preset2').onclick=function(){loadPreset(PRESET2);};
+
+  function bringToFront(idx){
+    if(idx<0||idx>=frames.length)return idx;
+    var f=frames.splice(idx,1)[0];
+    frames.push(f);
+    return frames.length-1;
+  }
+
+  var drawing=false,curStroke=null;
+  cv.addEventListener('mousedown',function(e){
+    var r=cv.getBoundingClientRect();
+    var x=e.clientX-r.left,y=e.clientY-r.top;
+    if(mode==='draw'){
+      drawing=true;
+      curStroke={color:curColor,width:curWidth,points:[{x:x,y:y}],local:!framesActive};
+      strokes.push(curStroke);
+      render();
+    } else {
+      var hit=hitTestFrames(x,y);
+      if(hit){
+        selFrame=bringToFront(hit.idx);
+        dragState={type:hit.handle,startX:x,startY:y,frame:Object.assign({},frames[selFrame])};
+      } else {
+        selFrame=-1;
+        dragState=null;
+      }
+      updateFrameUI();
+      render();
+    }
+  });
+  window.addEventListener('mousemove',function(e){
+    var r=cv.getBoundingClientRect();
+    var x=e.clientX-r.left,y=e.clientY-r.top;
+    if(drawing){
+      curStroke.points.push({x:x,y:y});
+      render();
+    } else if(dragState){
+      var f=frames[selFrame];
+      var orig=dragState.frame;
+      var dx=x-dragState.startX,dy=y-dragState.startY;
+      if(dragState.type==='move'){
+        f.cx=orig.cx+dx;f.cy=orig.cy+dy;
+      } else if(dragState.type==='rot'){
+        var ang=Math.atan2(y-orig.cy,x-orig.cx)+Math.PI/2;
+        f.rot=ang;
+      } else if(dragState.type.indexOf('corner')===0){
+        var cos=Math.cos(-orig.rot),sin=Math.sin(-orig.rot);
+        var lx=(x-orig.cx)*cos-(y-orig.cy)*sin;
+        var ly=(x-orig.cx)*sin+(y-orig.cy)*cos;
+        f.w=Math.max(15,Math.abs(lx)*2);
+        f.h=Math.max(15,Math.abs(ly)*2);
+      }
+      updateFrameUI();
+      render();
+    }
+  });
+  window.addEventListener('mouseup',function(){
+    drawing=false;curStroke=null;dragState=null;
+  });
+
+  function hitTestFrames(x,y){
+    for(var i=frames.length-1;i>=0;i--){
+      var f=frames[i];
+      var cos=Math.cos(-f.rot),sin=Math.sin(-f.rot);
+      var lx=(x-f.cx)*cos-(y-f.cy)*sin;
+      var ly=(x-f.cx)*sin+(y-f.cy)*cos;
+      var hw=f.w/2,hh=f.h/2;
+      var R=10;
+      var rotY=-hh-22;
+      if(Math.hypot(lx,ly-rotY)<R) return {idx:i,handle:'rot'};
+      if(Math.hypot(lx-hw,ly-hh)<R) return {idx:i,handle:'corner-br'};
+      if(Math.hypot(lx+hw,ly-hh)<R) return {idx:i,handle:'corner-bl'};
+      if(Math.hypot(lx-hw,ly+hh)<R) return {idx:i,handle:'corner-tr'};
+      if(Math.hypot(lx+hw,ly+hh)<R) return {idx:i,handle:'corner-tl'};
+      if(Math.abs(lx)<hw && Math.abs(ly)<hh) return {idx:i,handle:'move'};
+    }
+    return null;
+  }
+
+  function addFrame(opts){
+    opts=opts||{};
+    frames.push({
+      cx:opts.cx!=null?opts.cx:W/2+(frames.length-1)*40,
+      cy:opts.cy!=null?opts.cy:H/2,
+      w:opts.w!=null?opts.w:160,
+      h:opts.h!=null?opts.h:120,
+      rot:opts.rot!=null?opts.rot:0
+    });
+    selFrame=frames.length-1;
+    rebuildList();
+    updateFrameUI();
+    render();
+  }
+  document.getElementById('efs-add').onclick=function(){addFrame();};
+  document.getElementById('efs-dup').onclick=function(){
+    if(selFrame<0)return;
+    var f=frames[selFrame];
+    addFrame({cx:f.cx+30,cy:f.cy+30,w:f.w,h:f.h,rot:f.rot});
+  };
+  document.getElementById('efs-del').onclick=function(){
+    if(selFrame<0)return;
+    frames.splice(selFrame,1);
+    selFrame=-1;
+    rebuildList();updateFrameUI();render();
+  };
+  function rebuildList(){
+    var L=document.getElementById('efs-list');
+    L.innerHTML='';
+    frames.forEach(function(f,i){
+      var d=document.createElement('div');
+      d.className='efs-frame-item'+(i===selFrame?' sel':'');
+      d.innerHTML='<span class="num">F'+(i+1)+'</span> <span>cadre '+(i+1)+'</span> <span class="x" data-i="'+i+'">×</span>';
+      d.onclick=(function(idx){return function(e){
+        if(e.target.classList.contains('x')){
+          frames.splice(idx,1);
+          if(selFrame===idx)selFrame=-1;
+          else if(selFrame>idx)selFrame--;
+        } else {
+          selFrame=bringToFront(idx);
+        }
+        rebuildList();updateFrameUI();render();
+      };})(i);
+      L.appendChild(d);
+    });
+  }
+  function updateFrameUI(){
+    var ed=document.getElementById('efs-frame-edit');
+    if(selFrame<0||!frames[selFrame]){ed.style.display='none';rebuildList();return;}
+    ed.style.display='block';
+    var f=frames[selFrame];
+    document.getElementById('efs-pos').textContent=Math.round(f.cx)+', '+Math.round(f.cy);
+    document.getElementById('efs-scl').textContent=Math.round(f.w)+'×'+Math.round(f.h);
+    document.getElementById('efs-rot').textContent=Math.round(f.rot*180/Math.PI)+'°';
+    rebuildList();
+  }
+
+  function frameTransform(f){
+    var sx=f.w/W,sy=f.h/H;
+    var cos=Math.cos(f.rot),sin=Math.sin(f.rot);
+    return {
+      a:cos*sx, b:sin*sx,
+      c:-sin*sy, d:cos*sy,
+      e:f.cx-(W/2)*cos*sx+(H/2)*sin*sy,
+      f:f.cy-(W/2)*sin*sx-(H/2)*cos*sy
+    };
+  }
+  function applyT(t,x,y){
+    return {x:t.a*x+t.c*y+t.e, y:t.b*x+t.d*y+t.f};
+  }
+  function composeT(a,b){
+    return {
+      a:a.a*b.a+a.c*b.b, b:a.b*b.a+a.d*b.b,
+      c:a.a*b.c+a.c*b.d, d:a.b*b.c+a.d*b.d,
+      e:a.a*b.e+a.c*b.f+a.e, f:a.b*b.e+a.d*b.f+a.f
+    };
+  }
+  function identity(){return {a:1,b:0,c:0,d:1,e:0,f:0};}
+
+  function hexToRGBA(hex,alpha){
+    var h=hex.replace('#','');
+    var r=parseInt(h.substr(0,2),16),g=parseInt(h.substr(2,2),16),b=parseInt(h.substr(4,2),16);
+    return 'rgba('+r+','+g+','+b+','+alpha+')';
+  }
+
+  function drawStrokesSubset(targetCtx,strokeList,transforms,opacity,scale){
+    targetCtx.lineCap='round';targetCtx.lineJoin='round';
+    var minW=0.7*scale;
+    for(var ti=0;ti<transforms.length;ti++){
+      var t=transforms[ti];
+      var sc=Math.sqrt(Math.abs(t.a*t.d-t.b*t.c));
+      for(var si=0;si<strokeList.length;si++){
+        var s=strokeList[si];
+        if(s.points.length<2)continue;
+        targetCtx.strokeStyle=opacity>=1?s.color:hexToRGBA(s.color,opacity);
+        targetCtx.lineWidth=Math.max(minW,s.width*sc*scale);
+        targetCtx.beginPath();
+        var p0=applyT(t,s.points[0].x,s.points[0].y);
+        targetCtx.moveTo(p0.x*scale,p0.y*scale);
+        for(var pi=1;pi<s.points.length;pi++){
+          var p=applyT(t,s.points[pi].x,s.points[pi].y);
+          targetCtx.lineTo(p.x*scale,p.y*scale);
+        }
+        targetCtx.stroke();
+      }
+    }
+  }
+
+  function drawFrameOverlay(f,sel){
+    ctx.save();
+    ctx.translate(f.cx,f.cy);
+    ctx.rotate(f.rot);
+    var hw=f.w/2,hh=f.h/2;
+    ctx.strokeStyle=sel?'#F7931D':'rgba(120,140,255,0.7)';
+    ctx.fillStyle=sel?'rgba(247,147,29,0.06)':'rgba(120,140,255,0.04)';
+    ctx.lineWidth=sel?2:1;
+    ctx.setLineDash(sel?[]:[4,4]);
+    ctx.fillRect(-hw,-hh,f.w,f.h);
+    ctx.strokeRect(-hw,-hh,f.w,f.h);
+    ctx.setLineDash([]);
+    var R=4;
+    ctx.fillStyle=sel?'#F7931D':'#788cff';
+    [[-hw,-hh],[hw,-hh],[-hw,hh],[hw,hh]].forEach(function(p){
+      ctx.beginPath();ctx.arc(p[0],p[1],R,0,Math.PI*2);ctx.fill();
+    });
+    ctx.strokeStyle=sel?'#F7931D':'rgba(120,140,255,0.7)';
+    ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(0,-hh);ctx.lineTo(0,-hh-22);ctx.stroke();
+    ctx.beginPath();ctx.arc(0,-hh-22,5,0,Math.PI*2);
+    ctx.fillStyle=sel?'#F7931D':'#788cff';ctx.fill();
+    ctx.restore();
+  }
+
+  function renderArt(targetCtx,scale){
+    scale=scale||1;
+    targetCtx.fillStyle='#000';targetCtx.fillRect(0,0,W*scale,H*scale);
+    if(strokes.length===0)return;
+    var baseStrokes=strokes.filter(function(s){return !s.local;});
+    var localStrokes=strokes.filter(function(s){return s.local;});
+    var baseOpacity=frames.length===0?0.85:0.32;
+    drawStrokesSubset(targetCtx,baseStrokes,[identity()],baseOpacity,scale);
+    if(frames.length>0&&baseStrokes.length>0){
+      var current=[identity()];
+      var frameTs=frames.map(frameTransform);
+      for(var k=0;k<iterations;k++){
+        var next=[];
+        for(var ci=0;ci<current.length;ci++){
+          for(var fi=0;fi<frameTs.length;fi++){
+            next.push(composeT(current[ci],frameTs[fi]));
+          }
+        }
+        current=next;
+        var op=k===iterations-1?0.85:0.5;
+        drawStrokesSubset(targetCtx,baseStrokes,current,op,scale);
+        if(current.length>40000)break;
+      }
+    }
+    drawStrokesSubset(targetCtx,localStrokes,[identity()],1,scale);
+  }
+
+  function render(){
+    if(strokes.length===0){
+      ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
+      ctx.fillStyle='rgba(247,147,29,0.5)';
+      ctx.font='italic 16px var(--font-serif, serif)';
+      ctx.textAlign='center';
+      ctx.fillText('Trace les traits de la base de l\'arbre',W/2,H/2);
+      ctx.font='12px sans-serif';
+      ctx.fillStyle='rgba(247,147,29,0.35)';
+      ctx.fillText('(tronc + branches)',W/2,H/2+20);
+    } else {
+      renderArt(ctx,1);
+    }
+    if(mode==='frame'){
+      for(var i=0;i<frames.length;i++){
+        if(i!==selFrame)drawFrameOverlay(frames[i],false);
+      }
+      if(selFrame>=0&&selFrame<frames.length){
+        drawFrameOverlay(frames[selFrame],true);
+      }
+    }
+  }
+
+  function exportPNG(scale){
+    var off=document.createElement('canvas');
+    off.width=W*scale;off.height=H*scale;
+    var octx=off.getContext('2d');
+    renderArt(octx,scale);
+    off.toBlob(function(blob){
+      if(!blob)return;
+      var url=URL.createObjectURL(blob);
+      var a=document.createElement('a');
+      a.href=url;
+      var ts=new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+      var sfx=scale>1?'-hd'+scale+'x':'';
+      a.download='arbre-fractal-'+ts+sfx+'.png';
+      document.body.appendChild(a);a.click();
+      setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},100);
+    },'image/png');
+  }
+  document.getElementById('efs-save').onclick=function(){exportPNG(1);};
+  document.getElementById('efs-save-hd').onclick=function(){exportPNG(3);};
+
+  document.getElementById('efs-exp').onclick=function(){
+    var data={
+      strokes:strokes.map(function(s){return {color:s.color,width:s.width,local:!!s.local,points:s.points.map(function(p){return [Math.round(p.x),Math.round(p.y)];})};}),
+      frames:frames.map(function(f){return {cx:Math.round(f.cx),cy:Math.round(f.cy),w:Math.round(f.w),h:Math.round(f.h),rot:+f.rot.toFixed(3)};}),
+      canvas:{w:W,h:H},
+      iterations:iterations
+    };
+    var box=document.getElementById('efs-out-box');
+    box.style.display='block';
+    box.textContent=JSON.stringify(data,null,1);
+    if(navigator.clipboard) navigator.clipboard.writeText(JSON.stringify(data));
+  };
+
+  setTimeout(function(){
+    resize();
+    setMode('draw');
+    buildPalette();
+    updateFAUI();
+  },50);
+  window.addEventListener('resize',resize);
+})();
+</script>
